@@ -39,7 +39,17 @@ SOFTWARE.
 /* Private variables */
 /* Private function prototypes */
 /* Private functions */
+void send_char_UART2(char c)
+{
+	while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
+	USART_SendData(USART2, c);
+}
 
+void send_string_UART2(char const *s)
+{
+	while (*s)
+	send_char_UART2(*s++);
+}
 
 /**
 **===========================================================================
@@ -50,8 +60,6 @@ SOFTWARE.
 */
 int main(void)
 {
-  int i = 0;
-
   /**
   *  IMPORTANT NOTE!
   *  See the <system_*.c> file and how/if the SystemInit() function updates 
@@ -70,15 +78,15 @@ int main(void)
   */
 
   /* TODO - Add your application code here */
-  Debug::OutputClockOnPA8(Debug::HSI, Debug::Div1);
-  Debug::OutputClockOnPA8(Debug::HSI, Debug::Div2);
-  Debug::OutputClockOnPA8(Debug::HSI, Debug::Div4);
-  Debug::OutputClockOnPA8(Debug::HSI, Debug::Div8);
-  Debug::OutputClockOnPA8(Debug::HSI, Debug::Div16);
-  Debug::OutputClockOnPA8(Debug::PLLCLK, Debug::Div1);
-  Debug::OutputClockOnPA8(Debug::LSI, Debug::Div1);
-  Debug::OutputClockOnPA8(Debug::MSI, Debug::Div1);
-  Debug::OutputClockOnPA8(Debug::SYSCLK, Debug::Div1);
+  Debug::OutputClockOnPA8(Debug::NoClock, Debug::Div1);
+  // Debug::OutputClockOnPA8(Debug::HSI, Debug::Div2);
+  // Debug::OutputClockOnPA8(Debug::HSI, Debug::Div4);
+  // Debug::OutputClockOnPA8(Debug::HSI, Debug::Div8);
+  // Debug::OutputClockOnPA8(Debug::HSI, Debug::Div16);
+  // Debug::OutputClockOnPA8(Debug::PLLCLK, Debug::Div1);
+  // Debug::OutputClockOnPA8(Debug::LSI, Debug::Div1);
+  // Debug::OutputClockOnPA8(Debug::MSI, Debug::Div1);
+  // Debug::OutputClockOnPA8(Debug::SYSCLK, Debug::Div1);
 
    /*
     * Inicjalizacja diody.
@@ -92,13 +100,51 @@ int main(void)
    GPIO_Init(GPIOA, &LD2_Pin);
 
    GPIO_SetBits(GPIOA, GPIO_Pin_5);
+   /***********************************************
+   * USART2 Configuration
+   ***********************************************/
 
+  //GPIO configuration
+
+  GPIO_InitTypeDef UART2Pins_InitStruct;
+
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_USART2 );
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_USART2 );
+
+  UART2Pins_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+  UART2Pins_InitStruct.GPIO_OType = GPIO_OType_PP;
+  UART2Pins_InitStruct.GPIO_Pin = GPIO_Pin_2| GPIO_Pin_3;
+  UART2Pins_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+  //UART2Pins_InitStruct.GPIO_Speed = GPIO_Speed_400KHz;
+  GPIO_Init(GPIOA,&UART2Pins_InitStruct);
+
+  //UART peripheral configuration
+
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+
+  USART_InitTypeDef UART2_InitStruct;
+
+  UART2_InitStruct.USART_BaudRate = 115200;
+  UART2_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+  UART2_InitStruct.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
+  UART2_InitStruct.USART_Parity = USART_Parity_No;
+  UART2_InitStruct.USART_StopBits = USART_StopBits_1;
+  UART2_InitStruct.USART_WordLength = USART_WordLength_8b;
+  USART_Init(USART2, &UART2_InitStruct);
+
+  USART_Cmd(USART2,ENABLE);
+
+
+  char const * string = "Hello World!\n\r";
 
   /* Infinite loop */
   while (1)
   {
-	i++;
+	  send_string_UART2(string);
   }
+
   return 0;
 }
 
