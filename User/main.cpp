@@ -117,8 +117,8 @@ int main(void)
 		  send_string_UART2("Otrzymana wiadomosc: ");
 		  send_string_UART2(message);
 		  send_string_UART2("\n\r");
+		  clearBuffer((uint8_t*)message,UART_RX_BUF_SIZE);	// Clears the message buffer so if the new message is shorter than previous, we don't see the remains of the latter
 		  uart_received_message_flag = 0;
-		  clearBuffer((uint8_t*)message,UART_RX_BUF_SIZE);
 	  }
   }
 

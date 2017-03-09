@@ -20,9 +20,9 @@ volatile uint8_t uart_rx_buffer_head_index;
 
 volatile uint8_t uart_received_message_flag;
 
-int8_t uart_getByte(uint8_t * receivedData);
-int8_t uart_getMessage(uint8_t * message);
+int8_t uart_getByte(uint8_t * receivedData);  // Puts a byte from the uart_rx_buffer to receivedData address
+int8_t uart_getMessage(uint8_t * message);	  // Puts all new received data to message address
 
-void init_UART2();
+void init_UART2();							 // UART2 initialization, with RX interrupt init
 
 #endif /* USER_USART_LIB_H_ */

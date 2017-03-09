@@ -24,7 +24,7 @@ int8_t uart_getByte(uint8_t * receivedData) {
 
 int8_t uart_getMessage(uint8_t * message){
 	uint8_t counter = 0;
-	while(uart_getByte(message+counter)){
+	while(uart_getByte(message+counter)){			// read bytes from uart_rx_buffer until it returns error code which means that it's empty
 		counter++;
 	}
 	return 1;
@@ -37,8 +37,8 @@ void USART2_IRQHandler() {
 		uint8_t tmp_head;
 		data = USART2->DR;
 		tmp_head = (uart_rx_buffer_head_index+1) & UART_RX_BUF_MASK;
-		if(data == DELIMETER || tmp_head == uart_rx_buffer_tail_index )
-			uart_received_message_flag = 1;
+		if(data == DELIMETER || tmp_head == uart_rx_buffer_tail_index )		// If the circular buffer is full (head caught up to tail) or received char is a DELIMETER,
+			uart_received_message_flag = 1;								    // set the flag and stop writing new data to buffer
 		else
 		{
 			uart_rx_buffer_head_index = tmp_head;
@@ -83,6 +83,7 @@ void init_UART2(){
 
 	  USART_Cmd(USART2,ENABLE);
 
+	  // USART 2 RX interrupt configuration
 	  NVIC_InitTypeDef NVIC_InitStructure;
 
 	  USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
