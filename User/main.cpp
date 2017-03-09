@@ -31,12 +31,17 @@ SOFTWARE.
 #include "stm32l1xx.h"
 
 #include "DebugUtilities/Debug.hpp"
+extern "C" {
+	#include "User_USART_lib.h"
+}
 
 
 /* Private typedef */
 /* Private define  */
 /* Private macro */
 /* Private variables */
+extern volatile uint8_t uart_received_message_flag;
+
 /* Private function prototypes */
 /* Private functions */
 void send_char_UART2(char c)
@@ -47,8 +52,14 @@ void send_char_UART2(char c)
 
 void send_string_UART2(char const *s)
 {
-	while (*s)
+	while (*s != DELIMETER && *s != 0)
 	send_char_UART2(*s++);
+}
+
+void clearBuffer(uint8_t * buffer, uint8_t size){
+	for(int i=0; i<size; i++){
+		buffer[i] = 0;
+	}
 }
 
 /**
@@ -77,16 +88,6 @@ int main(void)
   *  system_stm32l1xx.c file
   */
 
-  /* TODO - Add your application code here */
-  Debug::OutputClockOnPA8(Debug::NoClock, Debug::Div1);
-  // Debug::OutputClockOnPA8(Debug::HSI, Debug::Div2);
-  // Debug::OutputClockOnPA8(Debug::HSI, Debug::Div4);
-  // Debug::OutputClockOnPA8(Debug::HSI, Debug::Div8);
-  // Debug::OutputClockOnPA8(Debug::HSI, Debug::Div16);
-  // Debug::OutputClockOnPA8(Debug::PLLCLK, Debug::Div1);
-  // Debug::OutputClockOnPA8(Debug::LSI, Debug::Div1);
-  // Debug::OutputClockOnPA8(Debug::MSI, Debug::Div1);
-  // Debug::OutputClockOnPA8(Debug::SYSCLK, Debug::Div1);
 
    /*
     * Inicjalizacja diody.
@@ -104,45 +105,21 @@ int main(void)
    * USART2 Configuration
    ***********************************************/
 
-  //GPIO configuration
+   init_UART2();
 
-  GPIO_InitTypeDef UART2Pins_InitStruct;
-
-  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_USART2 );
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_USART2 );
-
-  UART2Pins_InitStruct.GPIO_Mode = GPIO_Mode_AF;
-  UART2Pins_InitStruct.GPIO_OType = GPIO_OType_PP;
-  UART2Pins_InitStruct.GPIO_Pin = GPIO_Pin_2| GPIO_Pin_3;
-  UART2Pins_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
-  //UART2Pins_InitStruct.GPIO_Speed = GPIO_Speed_400KHz;
-  GPIO_Init(GPIOA,&UART2Pins_InitStruct);
-
-  //UART peripheral configuration
-
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
-
-  USART_InitTypeDef UART2_InitStruct;
-
-  UART2_InitStruct.USART_BaudRate = 115200;
-  UART2_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-  UART2_InitStruct.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
-  UART2_InitStruct.USART_Parity = USART_Parity_No;
-  UART2_InitStruct.USART_StopBits = USART_StopBits_1;
-  UART2_InitStruct.USART_WordLength = USART_WordLength_8b;
-  USART_Init(USART2, &UART2_InitStruct);
-
-  USART_Cmd(USART2,ENABLE);
-
-
-  char const * string = "Hello World!\n\r";
+   char message[UART_RX_BUF_SIZE];
 
   /* Infinite loop */
   while (1)
   {
-	  send_string_UART2(string);
+	  if(uart_received_message_flag){
+		  uart_getMessage((uint8_t*)message);
+		  send_string_UART2("Otrzymana wiadomosc: ");
+		  send_string_UART2(message);
+		  send_string_UART2("\n\r");
+		  clearBuffer((uint8_t*)message,UART_RX_BUF_SIZE);	// Clears the message buffer so if the new message is shorter than previous, we don't see the remains of the latter
+		  uart_received_message_flag = 0;
+	  }
   }
 
   return 0;
